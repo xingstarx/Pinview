@@ -20,12 +20,14 @@ SOFTWARE.
 package com.goodiebag.pinview
 
 import android.annotation.SuppressLint
+import android.content.ClipboardManager
 import android.content.Context
 import android.graphics.PorterDuff
 import android.text.Editable
 import android.text.InputFilter
 import android.text.TextWatcher
 import android.util.AttributeSet
+import android.util.Log
 import android.view.Gravity
 import android.view.KeyEvent
 import android.view.View
@@ -200,23 +202,57 @@ class Pinview @JvmOverloads constructor(context: Context, attrs: AttributeSet? =
         styleEditText.layoutParams = params
         styleEditText.gravity = Gravity.CENTER
         styleEditText.isCursorVisible = mCursorVisible
+        
+        // 启用长按功能
+        styleEditText.isLongClickable = true
+        styleEditText.setTextIsSelectable(true)
 
         if (!mCursorVisible) {
-            styleEditText.isClickable = false
             styleEditText.hint = mHint
-            styleEditText.setOnTouchListener { _, _ -> // When back space is pressed it goes to delete mode and when u click on an edit Text it should get out of the delete mode
+            styleEditText.setOnTouchListener { _, _ -> 
                 mDelPressed = false
                 false
             }
         }
+        
         styleEditText.apply {
             setBackgroundResource(pinBackground)
             setPadding(0, 0, 0, 0)
             this.tag = tag
-            inputType = keyboardInputType
+            this.inputType = keyboardInputType
+            
+            // 启用长按和文本选择功能
+            isLongClickable = true
+            setTextIsSelectable(true)
+            isFocusable = true
+            isFocusableInTouchMode = true
+            
             addTextChangedListener(this@Pinview)
             onFocusChangeListener = this@Pinview
             setOnKeyListener(this@Pinview)
+            
+            // 设置自定义的上下文菜单回调
+            setOnLongClickListener { view ->
+                Log.d("Pinview", "OnLongClick triggered")
+                val clipboard = context.getSystemService(Context.CLIPBOARD_SERVICE) as? ClipboardManager
+                val pasteText = clipboard?.primaryClip?.getItemAt(0)?.text?.toString()
+                
+                if (!pasteText.isNullOrEmpty()) {
+                    when (this@Pinview.inputType) {
+                        InputType.NUMBER -> {
+                            if (pasteText.matches(Regex("\\d+"))) {
+                                this@Pinview.value = pasteText.take(mPinLength)
+                            }
+                        }
+                        InputType.TEXT -> {
+                            this@Pinview.value = pasteText.take(mPinLength)
+                        }
+                    }
+                    true
+                } else {
+                    false
+                }
+            }
         }
     }
 

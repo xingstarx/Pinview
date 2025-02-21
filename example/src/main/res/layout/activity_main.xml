@@ -94,7 +94,7 @@
         android:id="@+id/pinview5"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        app:inputType="text"
+        app:inputType="number"
         app:pinHeight="40dp"
         app:pinLength="4"
         app:pinWidth="40dp"/>
